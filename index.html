@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Назови слоги и раскрась по образцу — БА, БО, БУ, БЫ, БИ</title>
+<style>
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #f3f9e8 0%, #eef6ff 100%);
+    color: #222;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 12px 16px 14px;
+    text-align: center;
+    border-bottom: 2px solid #d9e8c8;
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: clamp(1.2rem, 3.2vw, 1.85rem);
+    color: #2c5e1a;
+    letter-spacing: 0.3px;
+  }
+  .author-top {
+    margin: 0 0 10px;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    color: #556270;
+    font-weight: 600;
+  }
+  .palette-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .swatch {
+    position: relative;
+    width: clamp(62px, 15vw, 88px);
+    height: clamp(54px, 12vw, 72px);
+    border-radius: 52% 48% 55% 45% / 48% 54% 46% 52%;
+    border: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 3.2vw, 1.7rem);
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.14), inset 0 -4px 8px rgba(0,0,0,0.12), inset 0 4px 8px rgba(255,255,255,0.45);
+  }
+  .swatch:hover {
+    transform: translateY(-2px) scale(1.04);
+  }
+  .swatch.active {
+    transform: scale(1.1);
+    border-color: #1f2937;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25), 0 0 0 4px rgba(255,255,255,0.9);
+  }
+  .swatch::after {
+    content: "";
+    position: absolute;
+    top: 7px;
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.65);
+  }
+  .controls-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #374151;
+  }
+  .reset-btn {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .reset-btn:hover {
+    background: #1d4ed8;
+  }
+  .reset-btn:active {
+    transform: scale(0.97);
+  }
+  .board-wrapper {
+    width: 100%;
+    max-width: 820px;
+    padding: 18px 12px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .board-card {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 14px 10px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.07);
+    border: 3px dashed #a7d176;
+  }
+  svg.beads-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .bead-group {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .bead-group:hover .bead-circle {
+    stroke-width: 4.5;
+  }
+  .bead-circle {
+    transition: fill 0.25s ease, stroke 0.25s ease;
+  }
+  .bead-text {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 800;
+    font-size: 25px;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    transition: fill 0.25s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+  .shake {
+    animation: shake 0.35s ease;
+  }
+  .victory-banner {
+    display: none;
+    margin-top: 16px;
+    background: linear-gradient(135deg, #dcfce7, #fef9c3);
+    border: 2px solid #22c55e;
+    border-radius: 18px;
+    padding: 14px 20px;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #166534;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.18);
+  }
+  .victory-banner.show {
+    display: block;
+  }
+  footer {
+    width: 100%;
+    text-align: center;
+    padding: 14px 16px 22px;
+    font-size: 0.92rem;
+    color: #556270;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="sticky-header">
+  <h1>Назови слоги и раскрась по образцу</h1>
+  <div class="author-top">Автор игры: Краинская Ирина Александровна, педагог дополнительного образования</div>
+  <div class="palette-container" id="palette"></div>
+  <div class="controls-bar">
+    <span id="progressText">Раскрашено: 0 из 34</span>
+    <span id="hintText" style="color:#2563eb;">Выбери краску сверху и нажми на нужный слог</span>
+    <button class="reset-btn" onclick="resetGame()">Начать заново</button>
+  </div>
+</div>
+
+<div class="board-wrapper">
+  <div class="board-card">
+    <svg class="beads-svg" id="beadsSvg" viewBox="0 0 760 660" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="victory-banner" id="victoryBanner">
+    Молодец! Все слоги названы и раскрашены правильно!
+  </div>
+</div>
+
+<footer>
+  Автор игры: Краинская Ирина Александровна, педагог дополнительного образования
+</footer>
+
+<script>
+const COLORS = [
+  { syl: 'БА', bg: '#ef4444', text: '#ffffff', stroke: '#b91c1c' },
+  { syl: 'БО', bg: '#3b82f6', text: '#ffffff', stroke: '#1d4ed8' },
+  { syl: 'БУ', bg: '#84cc16', text: '#1a2e05', stroke: '#4d7c0f' },
+  { syl: 'БЫ', bg: '#facc15', text: '#1f2937', stroke: '#ca8a04' },
+  { syl: 'БИ', bg: '#f97316', text: '#ffffff', stroke: '#c2410c' }
+];
+
+// 34 бусины по строкам (змейкой, как на рабочем листе, с заменой БЭ на БИ)
+const ROWS = [
+  { dir: 'ltr', y: 75,  dropLast: true,  syllables: ['БА', 'БО', 'БУ', 'БЫ', 'БИ', 'БО'] },
+  { dir: 'rtl', y: 205, dropLast: true,  syllables: ['БА', 'БУ', 'БО', 'БЫ', 'БА', 'БИ', 'БУ'] },
+  { dir: 'ltr', y: 335, dropLast: true,  syllables: ['БЫ', 'БО', 'БИ', 'БУ', 'БА', 'БО', 'БЫ'] },
+  { dir: 'rtl', y: 465, dropLast: true,  syllables: ['БУ', 'БИ', 'БЫ', 'БО', 'БА', 'БУ', 'БИ'] },
+  { dir: 'ltr', y: 590, dropLast: false, syllables: ['БО', 'БА', 'БЫ', 'БУ', 'БИ', 'БО', 'БА'] }
+];
+
+let selectedSyllable = COLORS[0].syl;
+let coloredCount = 0;
+let totalBeads = 0;
+
+function initPalette() {
+  const paletteEl = document.getElementById('palette');
+  paletteEl.innerHTML = '';
+  COLORS.forEach(item => {
+    const btn = document.createElement('div');
+    btn.className = 'swatch' + (item.syl === selectedSyllable ? ' active' : '');
+    btn.style.backgroundColor = item.bg;
+    btn.style.color = item.text;
+    btn.textContent = item.syl;
+    btn.dataset.syl = item.syl;
+    btn.addEventListener('click', () => {
+      selectedSyllable = item.syl;
+      document.querySelectorAll('.swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.syl === selectedSyllable);
+      });
+      const hint = document.getElementById('hintText');
+      hint.textContent = 'Выбран слог: ' + selectedSyllable;
+      hint.style.color = '#166534';
+    });
+    paletteEl.appendChild(btn);
+  });
+}
+
+function buildBeads() {
+  const svg = document.getElementById('beadsSvg');
+  svg.innerHTML = '';
+  coloredCount = 0;
+  totalBeads = 0;
+
+  const points = [];
+  const xStart7 = 95;
+  const xStep7 = 95;
+
+  ROWS.forEach((row) => {
+    const count = row.syllables.length;
+    row.syllables.forEach((syl, i) => {
+      let x, y;
+      if (count === 6) {
+        // Первый ряд: 6 бусин (после бантика слева)
+        x = 185 + i * 96;
+      } else {
+        // Ряды по 7 бусин
+        if (row.dir === 'ltr') {
+          x = xStart7 + i * xStep7;
+        } else {
+          x = xStart7 + (count - 1 - i) * xStep7;
+        }
+      }
+      y = row.y;
+      if (row.dropLast && i === count - 1) {
+        y += 38;
+      }
+      points.push({ x, y, syl });
+    });
+  });
+
+  totalBeads = points.length;
+
+  // Рисуем нить, соединяющую бусины
+  let pathD = '';
+  // Хвостик и бантик перед первой бусиной
+  const first = points[0];
+  pathD += `M ${first.x - 95} ${first.y - 10} Q ${first.x - 55} ${first.y} ${first.x} ${first.y} `;
+
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const midX = (prev.x + curr.x) / 2;
+    const midY = (prev.y + curr.y) / 2;
+    if (Math.abs(curr.y - prev.y) > 50) {
+      // Плавный поворот на следующий ряд
+      const ctrlX = curr.x > 400 ? Math.max(prev.x, curr.x) + 48 : Math.min(prev.x, curr.x) - 48;
+      pathD += `Q ${ctrlX} ${midY} ${curr.x} ${curr.y} `;
+    } else {
+      pathD += `L ${curr.x} ${curr.y} `;
+    }
+  }
+
+  // Хвостик после последней бусины
+  const last = points[points.length - 1];
+  pathD += `L ${last.x + 75} ${last.y + 16}`;
+
+  const stringPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  stringPath.setAttribute('d', pathD);
+  stringPath.setAttribute('fill', 'none');
+  stringPath.setAttribute('stroke', '#475569');
+  stringPath.setAttribute('stroke-width', '4');
+  stringPath.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(stringPath);
+
+  // Декоративный бантик слева в начале нити
+  const bowX = first.x - 75;
+  const bowY = first.y - 6;
+  const bow = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  bow.innerHTML = `
+    <path d="M ${bowX} ${bowY} C ${bowX - 26} ${bowY - 24}, ${bowX - 32} ${bowY + 12}, ${bowX} ${bowY} Z" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+    <path d="M ${bowX} ${bowY} C ${bowX + 24} ${bowY - 26}, ${bowX + 30} ${bowY + 10}, ${bowX} ${bowY} Z" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+    <path d="M ${bowX} ${bowY} L ${bowX - 22} ${bowY + 28}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+    <path d="M ${bowX} ${bowY} L ${bowX + 14} ${bowY + 30}" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${bowX}" cy="${bowY}" r="5" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+  `;
+  svg.appendChild(bow);
+
+  // Кисточка на конце нити
+  const endX = last.x + 75;
+  const endY = last.y + 16;
+  const tassel = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  tassel.innerHTML = `
+    <path d="M ${endX} ${endY} L ${endX + 18} ${endY + 14}" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M ${endX} ${endY} L ${endX + 22} ${endY + 5}" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M ${endX} ${endY} L ${endX + 10} ${endY + 20}" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+  `;
+  svg.appendChild(tassel);
+
+  // Рисуем бусины
+  points.forEach((pt) => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'bead-group');
+    g.dataset.syl = pt.syl;
+    g.dataset.done = 'false';
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pt.x);
+    circle.setAttribute('cy', pt.y);
+    circle.setAttribute('r', '34');
+    circle.setAttribute('fill', '#ffffff');
+    circle.setAttribute('stroke', '#334155');
+    circle.setAttribute('stroke-width', '3.5');
+    circle.setAttribute('class', 'bead-circle');
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pt.x);
+    text.setAttribute('y', pt.y);
+    text.setAttribute('fill', '#1e293b');
+    text.setAttribute('class', 'bead-text');
+    text.textContent = pt.syl;
+
+    g.appendChild(circle);
+    g.appendChild(text);
+
+    g.addEventListener('click', () => {
+      if (g.dataset.done === 'true') return;
+
+      if (pt.syl === selectedSyllable) {
+        const colorObj = COLORS.find(c => c.syl === pt.syl);
+        circle.setAttribute('fill', colorObj.bg);
+        circle.setAttribute('stroke', colorObj.stroke);
+        text.setAttribute('fill', colorObj.text);
+        g.dataset.done = 'true';
+        coloredCount++;
+        updateProgress();
+      } else {
+        g.classList.remove('shake');
+        void g.offsetWidth;
+        g.classList.add('shake');
+        const hint = document.getElementById('hintText');
+        hint.textContent = `Подумай: выбран цвет «${selectedSyllable}», а на бусинке слог «${pt.syl}»`;
+        hint.style.color = '#dc2626';
+      }
+    });
+
+    svg.appendChild(g);
+  });
+
+  updateProgress();
+}
+
+function updateProgress() {
+  document.getElementById('progressText').textContent = `Раскрашено: ${coloredCount} из ${totalBeads}`;
+  const banner = document.getElementById('victoryBanner');
+  if (coloredCount === totalBeads) {
+    banner.classList.add('show');
+    const hint = document.getElementById('hintText');
+    hint.textContent = 'Отличная работа!';
+    hint.style.color = '#166534';
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function resetGame() {
+  selectedSyllable = COLORS[0].syl;
+  initPalette();
+  buildBeads();
+  const hint = document.getElementById('hintText');
+  hint.textContent = 'Выбери краску сверху и нажми на нужный слог';
+  hint.style.color = '#2563eb';
+}
+
+initPalette();
+buildBeads();
+</script>
+</body>
+</html>
